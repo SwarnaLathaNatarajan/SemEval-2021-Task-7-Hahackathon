@@ -16,6 +16,7 @@ from torch.optim import Adam
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from sklearn.model_selection import train_test_split
 import math
+from IPython import embed
 
 
 
@@ -49,18 +50,20 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
 
-    task = 'is_humor'
+    task = 'humor_controversy'
     path2spiece = 'xlnet_base_cased\spiece.model' 
     max_len = 64
     tokenizer = XLNetTokenizer(vocab_file=path2spiece, do_lower_case=False)
     data_path = r'C:\Users\krish\hamze\SemEval-2021-Task-7-Hahackathon\xlnet\data\train.csv'
-    df_data = pd.read_csv(data_path,sep=",",encoding="utf-8", usecols=['text', 'is_humor'])
+    df_data = pd.read_csv(data_path,sep=",",encoding="utf-8", usecols=['text', 'humor_controversy'])
+    df_data=df_data.dropna()
+    df_data.humor_controversy=df_data.humor_controversy.astype(int)
     print(df_data.columns)
     print(df_data.head(n=20))
-    print(df_data.is_humor.unique())
-    print(df_data.is_humor.value_counts())
+    print(df_data.humor_controversy.unique())
+    print(df_data.humor_controversy.value_counts())
     sentences = df_data.text.to_list()
-    labels = df_data.is_humor.to_list()
+    labels = df_data.humor_controversy.to_list()
     print(sentences[0], labels[0])
     tag2idx={'0': 0, '1': 1}
     tag2name={tag2idx[key] : key for key in tag2idx.keys()}
@@ -152,7 +155,7 @@ val_masks = torch.tensor(val_masks)
 tr_segs = torch.tensor(tr_segs)
 val_segs = torch.tensor(val_segs)
 
-batch_num = 32
+batch_num = 64
 train_data = TensorDataset(tr_inputs, tr_masks,tr_segs, tr_tags)
 train_sampler = RandomSampler(train_data)
 # Drop last can make batch training better for the last one
@@ -168,7 +171,7 @@ model = XLNetForSequenceClassification.from_pretrained(model_path, num_labels=le
 # print(model )
 model.to(device)
 
-epochs = 5
+epochs = 2
 max_grad_norm = 1.0
 # Cacluate train optimiazaion num
 num_train_optimization_steps = int( math.ceil(len(tr_inputs) / batch_num) / 1) * epochs
@@ -290,7 +293,7 @@ for step, batch in enumerate(valid_dataloader):
    
     nb_eval_steps += 1
     
-    
+embed()
 eval_loss = eval_loss / nb_eval_steps
 eval_accuracy = eval_accuracy / len(val_inputs)
 loss = tr_loss/nb_tr_steps 

@@ -1,0 +1,13 @@
+eval_accuracy = 0.9283333333333333
+eval_loss = 0.4570234268764034
+loss = 0.02936359489831375
+
+
+              precision    recall  f1-score   support
+
+           0       0.89      0.93      0.91       930
+           1       0.95      0.93      0.94      1470
+
+    accuracy                           0.93      2400
+   macro avg       0.92      0.93      0.92      2400
+weighted avg       0.93      0.93      0.93      2400

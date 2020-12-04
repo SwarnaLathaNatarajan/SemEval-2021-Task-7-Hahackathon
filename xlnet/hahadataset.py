@@ -73,8 +73,8 @@ class HahaDataset(torch.utils.data.Dataset):
 
     def read_file(self, file):
         inps = []
-
-        with open(file, 'r') as f:
+        file = r'C:\Users\krish\hamze\SemEval-2021-Task-7-Hahackathon\xlnet\data\train.csv'
+        with open(file, 'r', encoding="utf8") as f:
             reader = csv.reader(f)
             for line in reader:
                 if self.split == 'test':

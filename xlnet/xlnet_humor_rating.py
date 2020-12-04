@@ -16,6 +16,7 @@ from torch.optim import Adam
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from sklearn.model_selection import train_test_split
 import math
+from IPython import embed
 
 
 
@@ -49,18 +50,19 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
 
-    task = 'is_humor'
+    task = 'humor_rating'
     path2spiece = 'xlnet_base_cased\spiece.model' 
     max_len = 64
     tokenizer = XLNetTokenizer(vocab_file=path2spiece, do_lower_case=False)
     data_path = r'C:\Users\krish\hamze\SemEval-2021-Task-7-Hahackathon\xlnet\data\train.csv'
-    df_data = pd.read_csv(data_path,sep=",",encoding="utf-8", usecols=['text', 'is_humor'])
+    df_data = pd.read_csv(data_path,sep=",",encoding="utf-8", usecols=['text', 'humor_rating'])
+    df_data=df_data.dropna()
     print(df_data.columns)
     print(df_data.head(n=20))
-    print(df_data.is_humor.unique())
-    print(df_data.is_humor.value_counts())
+    print(df_data.humor_rating.unique())
+    print(df_data.humor_rating.value_counts())
     sentences = df_data.text.to_list()
-    labels = df_data.is_humor.to_list()
+    labels = df_data.humor_rating.to_list()
     print(sentences[0], labels[0])
     tag2idx={'0': 0, '1': 1}
     tag2name={tag2idx[key] : key for key in tag2idx.keys()}
@@ -138,8 +140,8 @@ for i,sentence in enumerate(sentences):
     #     print("segment_ids:%s"%(segment_ids))
     #     print("\n")
     
-tags = [tag2idx[str(lab)] for lab in labels]
-tr_inputs, val_inputs, tr_tags, val_tags,tr_masks, val_masks,tr_segs, val_segs = train_test_split(full_input_ids, tags,full_input_masks,full_segment_ids, random_state=4, test_size=0.3)
+# tags = [tag2idx[str(lab)] for lab in labels]
+tr_inputs, val_inputs, tr_tags, val_tags,tr_masks, val_masks,tr_segs, val_segs = train_test_split(full_input_ids, labels,full_input_masks,full_segment_ids, random_state=4, test_size=0.3)
 
 # print(len(tr_inputs),len(val_inputs),len(tr_segs),len(val_segs))
 
@@ -164,11 +166,11 @@ valid_dataloader = DataLoader(valid_data, sampler=valid_sampler, batch_size=batc
 
 # model_path = r'C:\Users\krish\hamze\SemEval-2021-Task-7-Hahackathon\xlnet\xlnet_cased_L-12_H-768_A-12'
 model_path = 'xlnet-base-cased'
-model = XLNetForSequenceClassification.from_pretrained(model_path, num_labels=len(tag2idx))
+model = XLNetForSequenceClassification.from_pretrained(model_path, num_labels=1)
 # print(model )
 model.to(device)
 
-epochs = 5
+epochs = 1
 max_grad_norm = 1.0
 # Cacluate train optimiazaion num
 num_train_optimization_steps = int( math.ceil(len(tr_inputs) / batch_num) / 1) * epochs
@@ -292,12 +294,14 @@ for step, batch in enumerate(valid_dataloader):
     
     
 eval_loss = eval_loss / nb_eval_steps
-eval_accuracy = eval_accuracy / len(val_inputs)
+# eval_accuracy = eval_accuracy / len(val_inputs)
+rmse= mean_squared_error(y_true, y_predict)
+embed()
 loss = tr_loss/nb_tr_steps 
 result = {'eval_loss': eval_loss,
-                  'eval_accuracy': eval_accuracy,
+                  'rmse': rmse,
                   'loss': loss}
-report = classification_report(y_pred=numpy.array(y_predict),y_true=numpy.array(y_true))
+#report = classification_report(y_pred=numpy.array(y_predict),y_true=numpy.array(y_true))
 
 # Save the report into file
 output_eval_file = os.path.join(xlnet_out_address, f"eval_results_{task}.txt")
@@ -307,9 +311,9 @@ with open(output_eval_file, "w") as writer:
         print("  %s = %s"%(key, str(result[key])))
         writer.write("%s = %s\n" % (key, str(result[key])))
         
-    print(report)
-    writer.write("\n\n")  
-    writer.write(report)
+    # print(report)
+    # writer.write("\n\n")  
+    # writer.write(report)
 
     # train_dataset = HahaDataset(
     #     input_file='data\train.csv',
