@@ -314,52 +314,107 @@ with open(output_eval_file, "w") as writer:
     writer.write("\n\n")  
     writer.write(report)
 
-    # train_dataset = HahaDataset(
-    #     input_file='data\train.csv',
-    #     tokenizer=tokenizer, 
-    #     max_len=64, 
-    #     task=task, 
-    #     split='train')
-    # print(train_dataset.labels.value_counts())
-    # eval_dataset = HahaDataset(
-    #     input_file='data/train.csv', 
-    #     tokenizer=tokenizer, 
-    #     max_len=64, 
-    #     task=task, 
-    #     split='eval')
-    # test_dataset = HahaDataset(
-    #     input_file='data/public_test.csv', 
-    #     tokenizer=tokenizer, 
-    #     max_len=64, 
-    #     task=task, 
-    #     split='test',
-    # )
+eval_path = r'C:\Users\krish\hamze\SemEval-2021-Task-7-Hahackathon\xlnet\data\public_test.csv'
+df_data = pd.read_csv(eval_path, sep=",", encoding="utf-8", usecols=['id', 'text'])
+sentences = df_data.text.to_list()
 
-    #model = RobertaForSequenceClassification.from_pretrained('roberta-base', num_labels=2)
+#Tokenization and Segmentation
+full_input_ids = []
+full_input_masks = []
+full_segment_ids = []
 
-    #warmup_steps = int(args.max_steps * .01)
+SEG_ID_A   = 0
+SEG_ID_B   = 1
+SEG_ID_CLS = 2
+SEG_ID_SEP = 3
+SEG_ID_PAD = 4
 
-    #training_args = TrainingArguments(output_dir=args.output_directory, max_steps=args.max_steps, per_device_train_batch_size=args.batch_size, logging_steps=25, save_total_limit=1, evaluate_during_training=True, eval_steps=50, learning_rate=2e-5, warmup_steps=warmup_steps, load_best_model_at_end=True, metric_for_best_model='eval_accuracy', disable_tqdm=True)
+UNK_ID = tokenizer.encode("<unk>")[0]
+CLS_ID = tokenizer.encode("<cls>")[0]
+SEP_ID = tokenizer.encode("<sep>")[0]
+MASK_ID = tokenizer.encode("<mask>")[0]
+EOD_ID = tokenizer.encode("<eod>")[0]
 
-    #trainer = Trainer(model=model, args=training_args, train_dataset=train_dataset, eval_dataset=eval_dataset, compute_metrics=metrics_acc, )
+for i,sentence in enumerate(sentences):
+    # Tokenize sentence to token id list
+    tokens_a = tokenizer.encode(sentence)
+    
+    # Trim the len of text
+    if(len(tokens_a)>max_len-2):
+        tokens_a = tokens_a[:max_len-2]
+    
+    tokens = []
+    segment_ids = []
+    
+    for token in tokens_a:
+        tokens.append(token)
+        segment_ids.append(SEG_ID_A)
+        
+    # Add <sep> token 
+    tokens.append(SEP_ID)
+    segment_ids.append(SEG_ID_A)
+    
+    
+    # Add <cls> token
+    tokens.append(CLS_ID)
+    segment_ids.append(SEG_ID_CLS)
+    
+    input_ids = tokens
+    
+    # The mask has 0 for real tokens and 1 for padding tokens. Only real
+    # tokens are attended to.
+    input_mask = [0] * len(input_ids)
 
-    #trainer.train()
+    # Zero-pad up to the sequence length at fornt
+    if len(input_ids) < max_len:
+        delta_len = max_len - len(input_ids)
+        input_ids = [0] * delta_len + input_ids
+        input_mask = [1] * delta_len + input_mask
+        segment_ids = [SEG_ID_PAD] * delta_len + segment_ids
 
-    #predictions = trainer.predict(test_dataset)
-    #is_humor_preds = predictions.predictions.argmax(-1)
+    assert len(input_ids) == max_len
+    assert len(input_mask) == max_len
+    assert len(segment_ids) == max_len
+    
+    full_input_ids.append(input_ids)
+    full_input_masks.append(input_mask)
+    full_segment_ids.append(segment_ids)
 
-    #print(predictions)
-    #print(is_humor_preds)
+input_ids = torch.tensor(full_input_ids)
+input_mask = torch.tensor(full_input_masks)
+segs = torch.tensor(full_segment_ids)
 
-    #output_list = []
-    #for pred in is_humor_preds:
-    #    temp = {}
-    #    temp['is_humor'] = pred
-    #    output_list.append(temp)
+test_data = TensorDataset(input_ids, input_mask, segs)
+test_sampler = SequentialSampler(test_data)
+test_dataloader = DataLoader(test_data, sampler=test_sampler, batch_size=batch_num)
 
-    #out_df = pandas.DataFrame(output_list)
-    #out_df.to_csv('submission_is_humor.csv', index_label='id')
+y_true = []
+y_predict = []
 
+print("***** Running Testing *****")
+for step, batch in enumerate(test_dataloader):
+    batch = tuple(t.to(device) for t in batch)
+    b_input_ids, b_input_mask, b_segs = batch
+    
+    with torch.no_grad():
+        outputs = model(input_ids=b_input_ids, token_type_ids=b_segs, input_mask=b_input_mask)
+        logits = outputs[:1]
+  
+    # Get textclassification predict result
+    outputs = outputs[0].cpu().detach()
+    # Save predict and real label reuslt for analyze
+    for predict in numpy.argmax(outputs, axis=1):
+        y_predict.append(predict.item())
+    
+        
 
+output_list = []
+for pred in y_predict:
+    temp = {}
+    temp['humor_controversy'] = pred
+    output_list.append(temp)
 
+out_df = pandas.DataFrame(output_list)
+out_df.to_csv('sub_xlnet_humor_controversy.csv', index_label='id')
+print("** Generated sub_xlnet_humor_controversy.csv **")
 
