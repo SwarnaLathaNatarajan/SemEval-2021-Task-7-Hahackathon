@@ -15,6 +15,7 @@ from torch.optim import Adam
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from sklearn.model_selection import train_test_split
 import math
+from IPython import embed
 
 
 
@@ -167,7 +168,7 @@ model = XLNetForSequenceClassification.from_pretrained(model_path, num_labels=1)
 # print(model )
 model.to(device)
 
-epochs = 5
+epochs = 7
 max_grad_norm = 1.0
 # Cacluate train optimiazaion num
 num_train_optimization_steps = int( math.ceil(len(tr_inputs) / batch_num) / 1) * epochs
@@ -277,8 +278,8 @@ for step, batch in enumerate(valid_dataloader):
 #     print(label_ids)
     
     # Save predict and real label reuslt for analyze
-    for predict in numpy.argmax(logits, axis=1):
-        y_predict.append(predict)
+    for predict in logits.tolist():
+        y_predict.append(predict[0])
         
     for real_result in label_ids.tolist():
         y_true.append(real_result)
@@ -298,7 +299,7 @@ result = {'eval_loss': eval_loss,
                   'rmse': rmse,
                   'loss': loss}
 #report = classification_report(y_pred=numpy.array(y_predict),y_true=numpy.array(y_true))
-
+embed()
 # Save the report into file
 output_eval_file = os.path.join(xlnet_out_address, f"eval_results_{task}.txt")
 with open(output_eval_file, "w") as writer:

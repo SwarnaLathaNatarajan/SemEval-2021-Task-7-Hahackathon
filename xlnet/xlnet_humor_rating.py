@@ -52,18 +52,22 @@ if __name__ == '__main__':
 
     task = 'humor_rating'
     path2spiece = 'xlnet_base_cased\spiece.model' 
-    max_len = 64
+    max_len = 32
     tokenizer = XLNetTokenizer(vocab_file=path2spiece, do_lower_case=False)
     data_path = r'C:\Users\krish\hamze\SemEval-2021-Task-7-Hahackathon\xlnet\data\train.csv'
+
+
     df_data = pd.read_csv(data_path,sep=",",encoding="utf-8", usecols=['text', 'humor_rating'])
     df_data=df_data.dropna()
-    print(df_data.columns)
+    print(len(df_data.humor_rating))
+    print(len(df_data.text))
     print(df_data.head(n=20))
     print(df_data.humor_rating.unique())
     print(df_data.humor_rating.value_counts())
     sentences = df_data.text.to_list()
     labels = df_data.humor_rating.to_list()
     print(sentences[0], labels[0])
+    print(len(sentences), len(labels))
     tag2idx={'0': 0, '1': 1}
     tag2name={tag2idx[key] : key for key in tag2idx.keys()}
 
@@ -155,7 +159,7 @@ tr_segs = torch.tensor(tr_segs)
 val_segs = torch.tensor(val_segs)
 
 batch_num = 32
-train_data = TensorDataset(tr_inputs, tr_masks,tr_segs, tr_tags)
+train_data = TensorDataset(tr_inputs, tr_masks, tr_segs, tr_tags)
 train_sampler = RandomSampler(train_data)
 # Drop last can make batch training better for the last one
 train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=batch_num,drop_last=True)
@@ -167,10 +171,10 @@ valid_dataloader = DataLoader(valid_data, sampler=valid_sampler, batch_size=batc
 # model_path = r'C:\Users\krish\hamze\SemEval-2021-Task-7-Hahackathon\xlnet\xlnet_cased_L-12_H-768_A-12'
 model_path = 'xlnet-base-cased'
 model = XLNetForSequenceClassification.from_pretrained(model_path, num_labels=1)
-# print(model )
+
 model.to(device)
 
-epochs = 1
+epochs = 7
 max_grad_norm = 1.0
 # Cacluate train optimiazaion num
 num_train_optimization_steps = int( math.ceil(len(tr_inputs) / batch_num) / 1) * epochs
@@ -275,13 +279,10 @@ for step, batch in enumerate(valid_dataloader):
     logits = logits.detach().cpu().numpy()
     label_ids = b_labels.to('cpu').numpy()
     tmp_eval_accuracy = accuracy(logits, label_ids)
-#     print(tmp_eval_accuracy)
-#     print(np.argmax(logits, axis=1))
-#     print(label_ids)
-    
+
     # Save predict and real label reuslt for analyze
-    for predict in numpy.argmax(logits, axis=1):
-        y_predict.append(predict)
+    for predict in logits.tolist():
+        y_predict.append(predict[0])
         
     for real_result in label_ids.tolist():
         y_true.append(real_result)

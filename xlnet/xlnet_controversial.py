@@ -155,7 +155,7 @@ val_masks = torch.tensor(val_masks)
 tr_segs = torch.tensor(tr_segs)
 val_segs = torch.tensor(val_segs)
 
-batch_num = 64
+batch_num = 32
 train_data = TensorDataset(tr_inputs, tr_masks,tr_segs, tr_tags)
 train_sampler = RandomSampler(train_data)
 # Drop last can make batch training better for the last one
@@ -171,7 +171,7 @@ model = XLNetForSequenceClassification.from_pretrained(model_path, num_labels=le
 # print(model )
 model.to(device)
 
-epochs = 2
+epochs = 7
 max_grad_norm = 1.0
 # Cacluate train optimiazaion num
 num_train_optimization_steps = int( math.ceil(len(tr_inputs) / batch_num) / 1) * epochs
@@ -293,7 +293,7 @@ for step, batch in enumerate(valid_dataloader):
    
     nb_eval_steps += 1
     
-embed()
+
 eval_loss = eval_loss / nb_eval_steps
 eval_accuracy = eval_accuracy / len(val_inputs)
 loss = tr_loss/nb_tr_steps 
@@ -301,7 +301,7 @@ result = {'eval_loss': eval_loss,
                   'eval_accuracy': eval_accuracy,
                   'loss': loss}
 report = classification_report(y_pred=numpy.array(y_predict),y_true=numpy.array(y_true))
-
+embed()
 # Save the report into file
 output_eval_file = os.path.join(xlnet_out_address, f"eval_results_{task}.txt")
 with open(output_eval_file, "w") as writer:

@@ -168,7 +168,7 @@ model = XLNetForSequenceClassification.from_pretrained(model_path, num_labels=le
 # print(model )
 model.to(device)
 
-epochs = 5
+epochs = 7
 max_grad_norm = 1.0
 # Cacluate train optimiazaion num
 num_train_optimization_steps = int( math.ceil(len(tr_inputs) / batch_num) / 1) * epochs
