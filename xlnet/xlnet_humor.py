@@ -313,7 +313,7 @@ with open(output_eval_file, "w") as writer:
     writer.write(report)
 
 
-eval_path = r'C:\Users\krish\hamze\SemEval-2021-Task-7-Hahackathon\xlnet\data\public_test.csv'
+eval_path = r'C:\Users\krish\hamze\SemEval-2021-Task-7-Hahackathon\xlnet\data\public_dev.csv'
 df_data = pd.read_csv(eval_path, sep=",", encoding="utf-8", usecols=['id', 'text'])
 sentences = df_data.text.to_list()
 
@@ -415,5 +415,5 @@ for pred in y_predict:
     output_list.append(temp)
 
 out_df = pandas.DataFrame(output_list)
-out_df.to_csv('sub_xlnet_humor.csv', index_label='id')
-print("** Generated sub_xlnet_humor.csv **")
+out_df.to_csv('sub__dev_xlnet_humor.csv', index_label='id')
+print("** Generated sub_dev_xlnet_humor.csv **")

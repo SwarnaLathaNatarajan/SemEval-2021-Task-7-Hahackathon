@@ -171,7 +171,7 @@ model = XLNetForSequenceClassification.from_pretrained(model_path, num_labels=le
 # print(model )
 model.to(device)
 
-epochs = 7
+epochs = 8
 max_grad_norm = 1.0
 # Cacluate train optimiazaion num
 num_train_optimization_steps = int( math.ceil(len(tr_inputs) / batch_num) / 1) * epochs
@@ -301,7 +301,7 @@ result = {'eval_loss': eval_loss,
                   'eval_accuracy': eval_accuracy,
                   'loss': loss}
 report = classification_report(y_pred=numpy.array(y_predict),y_true=numpy.array(y_true))
-embed()
+
 # Save the report into file
 output_eval_file = os.path.join(xlnet_out_address, f"eval_results_{task}.txt")
 with open(output_eval_file, "w") as writer:
@@ -314,7 +314,7 @@ with open(output_eval_file, "w") as writer:
     writer.write("\n\n")  
     writer.write(report)
 
-eval_path = r'C:\Users\krish\hamze\SemEval-2021-Task-7-Hahackathon\xlnet\data\public_test.csv'
+eval_path = r'C:\Users\krish\hamze\SemEval-2021-Task-7-Hahackathon\xlnet\data\public_dev.csv'
 df_data = pd.read_csv(eval_path, sep=",", encoding="utf-8", usecols=['id', 'text'])
 sentences = df_data.text.to_list()
 
@@ -415,6 +415,6 @@ for pred in y_predict:
     output_list.append(temp)
 
 out_df = pandas.DataFrame(output_list)
-out_df.to_csv('sub_xlnet_humor_controversy.csv', index_label='id')
-print("** Generated sub_xlnet_humor_controversy.csv **")
+out_df.to_csv('sub_dev_xlnet_humor_controversy.csv', index_label='id')
+print("** Generated sub_dev_xlnet_humor_controversy.csv **")
 
